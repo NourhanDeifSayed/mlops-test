@@ -1,58 +1,55 @@
 
-name: Practice 
+name: practice
+
 on:
   push:
 
 jobs:
+  linter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: check out linter
+        uses: actions/checkout@v4
+
+      - name: run linter
+        run: echo "code quality check passed "
+
   
-  linter-job: 
-    runs-on: ubuntu-latest
+  training:
+    needs: linter 
 
-    steps:
-      - name: check out repo
-        uses: actions/checkout@v4
-
-      - name: run linter job
-        run: echo "code quality check passed"
-
-
-  Training:
-    needs: linter-job
-    
     if: |
-      github.ref=='refs/heads/main'&&
-      contains(github.event.head_commit.message,'[run-train]')
+      github.ref=='refs/heads/main' &&
+      contains(github.event.head_commit.message, '[run-train]')
 
     runs-on: ubuntu-latest
-
     steps:
       - name: check out repo
         uses: actions/checkout@v4
-      - name: python set up
+      - name: python setup
         uses: actions/setup-python@v5
         with: 
           python-version: '3.10'
-
-      - name: Install dependeces
+      - name: install dependeces
         run: pip install -r requirements.txt
 
-      - name: run trainig
+      - name: run training
         run: python training.py
       
-      - name: Generate error log
-        run: echo "if failure geenrate error log" > error_log.txt
+      - name: generate error log
+        if: failure()
+        run: echo "generate error log"> error_log.txt
 
-      - name: training failure
+      - name: upload error log if failure
         if: failure()
         uses: actions/upload-artifact@v4
         with: 
-          name: error-log
-          path: error_log.txt
-        
-      - name: clean-up gpu rescources
+         name: error log
+         path: error_log.txt
+      
+      - name: cleaning gpu
         if: always()
-        run: echo "cleaning gpu resources"
+        run: echo"training gpu"
 
-
-
+      
 
