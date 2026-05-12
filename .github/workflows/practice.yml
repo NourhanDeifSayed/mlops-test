@@ -4,52 +4,58 @@ name: practice
 on:
   push:
 
+
 jobs:
-  linter:
+  validation:
     runs-on: ubuntu-latest
-    steps:
-      - name: check out linter
+    env:
+      MLFLOW_TRACKING_URI: ${{secrets.MLFLOW_TRACKING_URI}}
+
+    steps: 
+      - name: checkout repo
         uses: actions/checkout@v4
 
-      - name: run linter
-        run: echo "code quality check passed "
-
-  
-  training:
-    needs: linter 
-
-    if: |
-      github.ref=='refs/heads/main' &&
-      contains(github.event.head_commit.message, '[run-train]')
-
-    runs-on: ubuntu-latest
-    steps:
-      - name: check out repo
-        uses: actions/checkout@v4
-      - name: python setup
+      - name: setup python
         uses: actions/setup-python@v5
-        with: 
-          python-version: '3.10'
-      - name: install dependeces
+        with:
+         python-version: '3.10'
+      
+      - name: install dependeces 
         run: pip install -r requirements.txt
 
-      - name: run training
-        run: python training.py
-      
-      - name: generate error log
-        if: failure()
-        run: echo "generate error log"> error_log.txt
+      - name: pull dvc
+        run: dvc pull
 
-      - name: upload error log if failure
-        if: failure()
+      - name: train model
+        run: python training.py
+
+      - name: saved model info
+        run: echo "Run_ID_123" > model_info.txt
+      
+      - name: upload artifact
         uses: actions/upload-artifact@v4
         with: 
-         name: error log
-         path: error_log.txt
+         name: model-info
+         path: model_info.txt
+  
+  deployment:
+    needs: validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: check out
+        uses: actions/checkout@v4
+
+      - name: download artifact
+        uses: actions/download-artifact@v4
+        with: 
+         name: model-info
       
-      - name: cleaning gpu
-        if: always()
-        run: echo"training gpu"
+      - name: accuracy threshold
+        run: python check_model_accuracy_threshold.py
+      
+      - name: docker build simulation
+        run: echo "docker build image simulation"
 
       
 
