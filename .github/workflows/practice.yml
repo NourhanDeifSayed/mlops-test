@@ -11,7 +11,7 @@ jobs:
       - name: check out 
         uses: actions/checkout@v4
       - name: run linter
-        run: echo"qualit code checked"
+        run: echo "qualit code checked"
 
 
   image-build:
@@ -25,14 +25,14 @@ jobs:
       - name: check out 
         uses: actions/checkout@v4
       - name: docker build
-        run: docker build -t my-app.
+        run: docker build -t my-app .
       
       - name: generte error log
         if: failure()
-        run: echo "generate error log" > error_log
+        run: echo "generate error log" > error_log.txt
 
       - name: upload artifact
-        if : failure()
+        if: failure()
         uses: actions/upload-artifact@v4
         with: 
          name: error log
