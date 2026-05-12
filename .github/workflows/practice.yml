@@ -1,61 +1,46 @@
 
-name: practice
-
+name: practice 
 on:
   push:
-
-
+  
 jobs:
-  validation:
+  
+  linter:
     runs-on: ubuntu-latest
-    env:
-      MLFLOW_TRACKING_URI: ${{secrets.MLFLOW_TRACKING_URI}}
-
-    steps: 
-      - name: checkout repo
+    steps:
+      - name: check out 
         uses: actions/checkout@v4
+      - name: run linter
+        run: echo"qualit code checked"
 
-      - name: setup python
-        uses: actions/setup-python@v5
-        with:
-         python-version: '3.10'
+
+  image-build:
+    needs: linter
+    if: |
+     github.ref=='refs/heads/main' &&
+     contains(github.event.head_commit.message,'[build-image]')
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: check out 
+        uses: actions/checkout@v4
+      - name: docker build
+        run: docker build -t my-app.
       
-      - name: install dependeces 
-        run: pip install -r requirements.txt
+      - name: generte error log
+        if: failure()
+        run: echo "generate error log" > error_log
 
-      - name: pull dvc
-        run: dvc pull
-
-      - name: train model
-        run: python training.py
-
-      - name: saved model info
-        run: echo "Run_ID_123" > model_info.txt
-      
       - name: upload artifact
+        if : failure()
         uses: actions/upload-artifact@v4
         with: 
-         name: model-info
-         path: model_info.txt
-  
-  deployment:
-    needs: validation
-    runs-on: ubuntu-latest
+         name: error log
+         path: error_log.txt
 
-    steps:
-      - name: check out
-        uses: actions/checkout@v4
-
-      - name: download artifact
-        uses: actions/download-artifact@v4
-        with: 
-         name: model-info
-      
-      - name: accuracy threshold
-        run: python check_model_accuracy_threshold.py
-      
-      - name: docker build simulation
-        run: echo "docker build image simulation"
-
-      
-
+      - name: clean up
+        if: always()
+        run: echo "cleaning up"
+ 
+     
+     
